@@ -42,15 +42,15 @@ class NMF(BaseNMF):
     n_iter: int (default: 100)
         number of iteration for algorithm
 
+
     References:
     -----------
-    '亀岡弘和. "非負値行列因子分解." 計測と制御 51.9 (2012): 835-844.'
-    <http://www.kecl.ntt.co.jp/people/kameoka.hirokazu/publications/Kameoka2012SICE09published.pdf>
+    [1] 亀岡弘和. "非負値行列因子分解." 計測と制御 51.9 (2012): 835-844.
+    [2] Daich Kitamura - Program Codes
 
     See also:
     ---------
-    'Daich Kitamura - Program Codes'
-    <http://d-kitamura.net/>
+    http://d-kitamura.net/
 
     """
     def __init__(self, data, m, beta=2, basis=None, activation=None,
@@ -179,6 +179,25 @@ class NMF(BaseNMF):
 
 
 ###############################################################################
+class ConvolutiveNMF(BaseNMF):
+    """convolutive NMF algorithm
+
+    Parameters:
+    -----------
+    data: np.ndarray, shape (I, J)
+        input data matix
+        input matrix must be Non-negative
+
+    References:
+    -----------
+    [1] P. Smaragdis, "Convolutive Speech Bases and their Application to Speech
+        Separation," IEEE Trans. Speech Audio Process., vol. 15, no. 1,
+        pp. 1-12, Jan. 2007.
+    """
+
+
+
+###############################################################################
 class SupervisedNMF(NMF, BaseNMF):
     """supervised NMF algorithm for KL divergence
 
@@ -201,12 +220,12 @@ class SupervisedNMF(NMF, BaseNMF):
     index: int (default: 0)
         index of mixture sound basis matrix
 
+
     References:
     -----------
-    'P.Smaragdis. "Supervised and semi-supervised separation of sounds from
-    single-channel mixtures." Independent Component Analysis and Signal
-    Separation (2007): 414-421.'
-    <http://cns-web.bu.edu/~mvss/stuff/smaragdis-ica07.pdf>
+    [1] P.Smaragdis. "Supervised and semi-supervised separation of sounds from
+        single-channel mixtures." Independent Component Analysis and Signal
+        Separation (2007): 414-421.
 
     """
     def __init__(self, data, m, basis, n_iter=100, interval=10, index=0):
@@ -316,6 +335,7 @@ class SemiNMF(NMF, BaseNMF):
     n_iter: int (default: 100)
         update iteration for NMF algorithm and set_cost
 
+
     Notes:
     ------
     basis matrix and activation matrix is defined as follows:
@@ -328,12 +348,12 @@ class SemiNMF(NMF, BaseNMF):
     basis matrix T is supervised basis. basis matrix F and activation
     matrix V, G are defined as random values.
 
+
     References:
     -----------
-    'P.Smaragdis. "Supervised and semi-supervised separation of sounds from
-    single-channel mixtures." Independent Component Analysis and Signal
-    Separation (2007): 414-421.'
-    <http://cns-web.bu.edu/~mvss/stuff/smaragdis-ica07.pdf>
+    [1] P.Smaragdis. "Supervised and semi-supervised separation of sounds from
+        single-channel mixtures." Independent Component Analysis and Signal
+        Separation (2007): 414-421.
 
     """
     def __init__(self, data, m, basis, n_iter=100, interval=10):

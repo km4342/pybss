@@ -49,6 +49,7 @@ class BaseNMF(object):
     interval: int (default: 10)
         interval of print iteration progress
 
+
     Attributes:
     -----------
     EPS: array-like, shape ()
@@ -69,16 +70,15 @@ class BaseNMF(object):
     cost: np.ndarray, shape (n_iter)
         convergence of cost function
 
+
     References:
     -----------
-    '亀岡弘和. "非負値行列因子分解." 計測と制御 51.9 (2012): 835-844.'
-    <http://www.kecl.ntt.co.jp/people/kameoka.hirokazu/publications/Kameoka2012SICE09published.pdf>
+    [1] 亀岡弘和. "非負値行列因子分解." 計測と制御 51.9 (2012): 835-844.
+    [2] Daich Kitamura - Program Codes
 
     See also:
     ---------
-    'Daich Kitamura - Program Codes'
-    <http://d-kitamura.net/>
-
+    http://d-kitamura.net/
     """
 
     def __init__(self, data, m, beta=2, basis=None, activation=None,
@@ -172,6 +172,7 @@ class BaseNMF(object):
         -----------
         curve: boolen (default: True)
             draw convergence curve or not
+
 
         Returns:
         --------
