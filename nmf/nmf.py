@@ -20,7 +20,7 @@ class NMF(BaseNMF):
      m: int
         number of basis
 
-    beta: float (default: 2)
+    beta: float (default: 1)
         set cost function for betaNMF algorithm
         -----------------------------------
         beta = 2 --> EUC distance(EUC)
@@ -53,7 +53,7 @@ class NMF(BaseNMF):
     http://d-kitamura.net/
 
     """
-    def __init__(self, data, m, beta=2, basis=None, activation=None,
+    def __init__(self, data, m, beta=1, basis=None, activation=None,
                  seed=None, n_iter=100, interval=10):
 
         super(NMF, self).__init__(data=data, m=m, beta=beta, basis=basis,
@@ -179,23 +179,95 @@ class NMF(BaseNMF):
 
 
 ###############################################################################
-class ConvolutiveNMF(BaseNMF):
-    """convolutive NMF algorithm
+class ExemplarNMF(BaseNMF):
+    """Exemplar-based NMF algorithm for noise robust automatic speech recognition
 
     Parameters:
     -----------
-    data: np.ndarray, shape (I, J)
-        input data matix
-        input matrix must be Non-negative
+    data: np.ndarray, shape (D, W)
+        input matrix of spectrogram include all frames
+
+        - D is single column vector reshaped by spectrogram, culculated by K * T
+        - W is number of frames, culculated by np.ceil((I - T) / shift) + 1
+
+     m: int
+         number of basis
+
+    speech_dict: np.ndarray, shape (D, S)
+        clean speech dictionary from training data
+
+        - D is single column vector reshaped by spectrogram, culculated by K * T
+        - S is number of speech dictionary
+
+    noise_dict: np.ndarray, shape (D, N)
+        noise dictionary from training data
+
+        - D is single column vector reshaped by spectrogram, culculated by K * T
+        - N is number of noise dictionary
+
+    weight: float (default: 0.65)
+        sparsity weight parameter for speech dictionary
+
+    beta: float (default: 1)
+        set cost function for betaNMF algorithm
+
+    n_iter: int (default: 100)
+        number of iteration for algorithm
+
 
     References:
     -----------
-    [1] P. Smaragdis, "Convolutive Speech Bases and their Application to Speech
-        Separation," IEEE Trans. Speech Audio Process., vol. 15, no. 1,
-        pp. 1-12, Jan. 2007.
+    [1] J. F. Gammecke and T. Virtanen, “Noise-robust exemplarbased
+        connected digit recognition,” Proc. ICASSP, pp. 4546-4549, 2010.
+
+
     """
+    def __init__(self, data, m, speech_dict, noise_dict, beta=1, weight=0.65,
+                 activation=None, seed=None, n_iter=100, interval=10):
 
+        super(ExemplarNMF, self).__init__(data=data, m=m, beta=beta,
+                                          basis=np.c_[speech_dict, noise_dict],
+                                          activation=activation, seed=None,
+                                          n_iter=n_iter, interval=interval)
 
+        super(ExemplarNMF, self)._set_divergence()
+
+        self._set_supervised(basis=basis, index=0)
+
+        # matrix size parameters
+        self.n_frames = np.shape(data)[1]
+        self.n_speechdict = np.shape(speech_dict)[1]
+        self.n_noisedict = np.shape(noise_dict)[1]
+
+        # weighted matrix
+        self._L = np.zeros(np.shape(self.n_frames, self.n_speechdict+self.n_noisedict))
+        self._L[:, :self.n_speechdict] = weight
+
+    def _set_supervised(self, basis, index):
+        """Set supervised basis matirix"""
+
+        self.last_index = index + np.shape(basis)[1]
+
+        if (self.last_index) > np.shape(self.H)[1]:
+            ValueError("The index is incorrect.")
+
+        self.H[:, index: self.last_index] = basis
+        self.H = np.maximum(self.H, EPS)
+
+    def _kl_divergence(self):
+        """cost function: KL divergence"""
+
+        HU = np.dot(self.H, self.U)
+
+        # update activation
+        self.U = (self.U *
+                  np.dot(self.H.T, self.X / HU) /
+                  (np.dot(self.H.T, self._e) + self._L))
+        self.U = np.maximum(self.U, EPS)
+
+        # cost function
+        HU = np.dot(self.H, self.U)
+        return np.sum(self.X * np.log(self.X / HU) - self.X + HU)
 
 ###############################################################################
 class SupervisedNMF(NMF, BaseNMF):

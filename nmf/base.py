@@ -21,7 +21,7 @@ class BaseNMF(object):
      m: int
         number of basis
 
-    beta: float (default: 2)
+    beta: float (default: 1)
         set cost function for betaNMF algorithm
         ----------------------------------
         beta = 2 --> EUC distance(EUC)
@@ -81,7 +81,7 @@ class BaseNMF(object):
     http://d-kitamura.net/
     """
 
-    def __init__(self, data, m, beta=2, basis=None, activation=None,
+    def __init__(self, data, m, beta=1, basis=None, activation=None,
                  seed=None, n_iter=100, interval=10):
 
         if np.min(data) < 0:
