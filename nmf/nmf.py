@@ -57,7 +57,7 @@ class NMF(BaseNMF):
                  seed=None, n_iter=100, interval=10):
 
         super(NMF, self).__init__(data=data, m=m, beta=beta, basis=basis,
-                                  activation=activation, seed=None,
+                                  activation=activation, seed=seed,
                                   n_iter=n_iter, interval=interval)
 
         self._set_divergence()
@@ -179,7 +179,7 @@ class NMF(BaseNMF):
 
 
 ###############################################################################
-class ExemplarNMF(BaseNMF):
+class ExemplarNMF(NMF, BaseNMF):
     """Exemplar-based NMF algorithm for noise robust automatic speech recognition
 
     Parameters:
@@ -189,9 +189,6 @@ class ExemplarNMF(BaseNMF):
 
         - D is single column vector reshaped by spectrogram, culculated by K * T
         - W is number of frames, culculated by np.ceil((I - T) / shift) + 1
-
-     m: int
-         number of basis
 
     speech_dict: np.ndarray, shape (D, S)
         clean speech dictionary from training data
@@ -208,9 +205,6 @@ class ExemplarNMF(BaseNMF):
     weight: float (default: 0.65)
         sparsity weight parameter for speech dictionary
 
-    beta: float (default: 1)
-        set cost function for betaNMF algorithm
-
     n_iter: int (default: 100)
         number of iteration for algorithm
 
@@ -220,31 +214,33 @@ class ExemplarNMF(BaseNMF):
     [1] J. F. Gammecke and T. Virtanen, “Noise-robust exemplarbased
         connected digit recognition,” Proc. ICASSP, pp. 4546-4549, 2010.
 
-
     """
-    def __init__(self, data, m, speech_dict, noise_dict, beta=1, weight=0.65,
-                 activation=None, seed=None, n_iter=100, interval=10):
+    def __init__(self, data, speech_dict, noise_dict, weight=0.65, seed=None,
+                 n_iter=100, interval=10):
 
-        super(ExemplarNMF, self).__init__(data=data, m=m, beta=beta,
-                                          basis=np.c_[speech_dict, noise_dict],
-                                          activation=activation, seed=None,
-                                          n_iter=n_iter, interval=interval)
+        # transpose dictionary matrix
+        speech_dict = speech_dict.T  # shape (D, S)
+        noise_dict = noise_dict.T  # shape (D, N)
+
+        # matrix size parameters
+        n_frames = np.shape(data.T)[1]
+        n_speechdict = np.shape(speech_dict)[1]
+        n_noisedict = np.shape(noise_dict)[1]
+
+        super(ExemplarNMF, self).__init__(data=data.T, m=n_speechdict+n_noisedict,
+                                          beta=1, basis=np.c_[speech_dict, noise_dict],
+                                          activation=None, seed=seed, n_iter=n_iter, interval=interval)
 
         super(ExemplarNMF, self)._set_divergence()
 
-        self._set_supervised(basis=basis, index=0)
-
-        # matrix size parameters
-        self.n_frames = np.shape(data)[1]
-        self.n_speechdict = np.shape(speech_dict)[1]
-        self.n_noisedict = np.shape(noise_dict)[1]
+        self._set_dictionary(basis=np.c_[speech_dict, noise_dict], index=0)
 
         # weighted matrix
-        self._L = np.zeros(np.shape(self.n_frames, self.n_speechdict+self.n_noisedict))
-        self._L[:, :self.n_speechdict] = weight
+        self._L = np.zeros((n_speechdict+n_noisedict, n_frames))
+        self._L[:n_speechdict, :] = weight
 
-    def _set_supervised(self, basis, index):
-        """Set supervised basis matirix"""
+    def _set_dictionary(self, basis, index):
+        """Set dictionary matirix"""
 
         self.last_index = index + np.shape(basis)[1]
 
@@ -252,7 +248,6 @@ class ExemplarNMF(BaseNMF):
             ValueError("The index is incorrect.")
 
         self.H[:, index: self.last_index] = basis
-        self.H = np.maximum(self.H, EPS)
 
     def _kl_divergence(self):
         """cost function: KL divergence"""
@@ -263,11 +258,10 @@ class ExemplarNMF(BaseNMF):
         self.U = (self.U *
                   np.dot(self.H.T, self.X / HU) /
                   (np.dot(self.H.T, self._e) + self._L))
-        self.U = np.maximum(self.U, EPS)
 
         # cost function
         HU = np.dot(self.H, self.U)
-        return np.sum(self.X * np.log(self.X / HU) - self.X + HU)
+        return np.sum(self.X * np.log(self.X / HU) - self.X + HU) + np.sum(self.U * self._L)
 
 ###############################################################################
 class SupervisedNMF(NMF, BaseNMF):
