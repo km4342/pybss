@@ -87,6 +87,7 @@ class BaseNMF(object):
         if np.min(data) < 0:
             raise ValueError("Input matrix must be Non-negative.")
 
+        # self.X = data
         self.X = np.maximum(data, EPS)
         self.beta = beta
         self.row, self.column = np.shape(self.X)

@@ -392,7 +392,7 @@ class SemiNMF(NMF, BaseNMF):
         input matrix must be Non-negative
 
      m: int
-        number of basis
+        number of basis for full basis matrix T and V
 
     basis: np.ndarray, shape (I, m)
         supervised basis matrix
@@ -422,9 +422,9 @@ class SemiNMF(NMF, BaseNMF):
         Separation (2007): 414-421.
 
     """
-    def __init__(self, data, m, basis, n_iter=100, interval=10):
+    def __init__(self, data, m, basis, seed=None, n_iter=100, interval=10):
 
-        super(SemiNMF, self).__init__(data=data, m=m, beta=1,
+        super(SemiNMF, self).__init__(data=data, m=m, beta=1, seed=seed,
                                       n_iter=n_iter, interval=interval)
 
         super(SemiNMF, self)._set_divergence()
